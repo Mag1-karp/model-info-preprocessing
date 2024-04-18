@@ -1,0 +1,4 @@
+com\kafka\write\DataSourceSpout.class
+com\kafka\read\LogConsoleBolt.class
+com\kafka\read\ReadingFromKafkaApp.class
+com\kafka\write\WritingToKafkaApp.class
