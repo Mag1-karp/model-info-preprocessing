@@ -14,6 +14,7 @@ import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterv
 import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
 
 /**
  * 从Kafka中读取数据
@@ -21,13 +22,14 @@ import org.apache.storm.topology.TopologyBuilder;
 public class ReadingFromKafkaApp {
 
     private static final String BOOTSTRAP_SERVERS = "CurriculumPractice:9092";
-    private static final String TOPIC_NAME = "model-info";
+    private static final String TOPIC_NAME = "model-info-2";
 
     public static void main(String[] args) throws Exception {
 
         final TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig(BOOTSTRAP_SERVERS, TOPIC_NAME)), 1);
-        builder.setBolt("bolt", new LogConsoleBolt()).shuffleGrouping("kafka_spout");
+        builder.setBolt("parsingBolt", new ParsingBolt()).shuffleGrouping("kafka_spout");
+        builder.setBolt("deduplicationBolt", new DeduplicationBolt()).fieldsGrouping("parsingBolt", new Fields("modelId"));
 
         // 如果外部传参cluster则代表线上环境启动,否则代表本地启动
         if (args.length > 0 && args[0].equals("cluster")) {
