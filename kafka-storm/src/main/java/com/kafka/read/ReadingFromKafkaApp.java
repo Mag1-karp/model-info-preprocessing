@@ -30,6 +30,9 @@ public class ReadingFromKafkaApp {
         builder.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig(BOOTSTRAP_SERVERS, TOPIC_NAME)), 1);
         builder.setBolt("parsingBolt", new ParsingBolt()).shuffleGrouping("kafka_spout");
         builder.setBolt("deduplicationBolt", new DeduplicationBolt()).fieldsGrouping("parsingBolt", new Fields("modelId"));
+        // builder.setBolt("logConsoleBolt", new LogConsoleBolt()).shuffleGrouping("deduplicationBolt");
+        // builder.setBolt("hiveBolt", new HiveBolt()).shuffleGrouping("deduplicationBolt");
+        builder.setBolt( "neo4jBolt", new Neo4jBolt()).shuffleGrouping(  "deduplicationBolt");
 
         // 如果外部传参cluster则代表线上环境启动,否则代表本地启动
         if (args.length > 0 && args[0].equals("cluster")) {

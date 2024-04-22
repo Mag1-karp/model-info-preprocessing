@@ -35,6 +35,11 @@
             <artifactId>hive-exec</artifactId>
             <version>4.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>5.18.0</version>
+        </dependency>
     </dependencies>
 
     <build>

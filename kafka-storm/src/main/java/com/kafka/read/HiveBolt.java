@@ -18,7 +18,7 @@ public class HiveBolt extends BaseBasicBolt {
     @Override
     public void prepare(Map stormConf, TopologyContext context) {
         HiveConf hiveConf = new HiveConf();
-        hiveConf.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://CurriculumService:9083");
+        //hiveConf.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://CurriculumService:9083");
         SessionState.start(hiveConf);
         hiveDriver = new Driver(hiveConf);
     }
