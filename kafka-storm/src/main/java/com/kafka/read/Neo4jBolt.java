@@ -40,15 +40,17 @@ public class Neo4jBolt extends BaseBasicBolt {
             String tag = modelInfoJson.getJSONArray("tags").getString(i);
             tags.add(tag.replace("\"", "")); // 去掉每个标签的双引号
         }
+        String author = modelInfoJson.getString("author");
+        String downloads = modelInfoJson.getString("downloads");
         String pipeline_tag = modelInfoJson.getString("pipeline_tag");
         // 获取模型类型
 //        String model_type = modelInfoJson.getJSONObject("config").getString("model_type");
-        String model_type = ""; // 初始化为默认值
-        JSONObject configJson = modelInfoJson.optJSONObject("config");
-        if (configJson != null) {
-            // 处理 configJson
-            model_type = configJson.getString("model_type"); // 更新为 configJson 中的值
-        }
+        String model_type =  modelInfoJson.getString("library_name"); // 初始化为默认值
+//        JSONObject configJson = modelInfoJson.optJSONObject("config");
+//        if (configJson != null) {
+//            // 处理 configJson
+//            model_type = configJson.getString("model_type"); // 更新为 configJson 中的值
+//        }
         String final_model_type=model_type;
 
 
@@ -59,13 +61,29 @@ public class Neo4jBolt extends BaseBasicBolt {
             session.writeTransaction(tx -> {
                 Result result = tx.run(
                         "MERGE (m:Model {modelId: $modelId}) " +
-                                "SET m.tags = $tags, m.modelTask = $pipeline_tag, m.modelFamily = $model_type " +
+                                "SET m.tags = $tags, m.modelTask = $pipeline_tag, m.modelFamily = $model_type, m.downloads=$downloads " +
                                 "RETURN m",
-                        parameters("modelId", modelId, "tags", tags, "pipeline_tag", pipeline_tag,"model_type",final_model_type)
+                        parameters("modelId", modelId, "downloads",downloads,"tags", tags, "pipeline_tag", pipeline_tag,"model_type",final_model_type)
                 );
                 result.consume(); // 消耗查询结果
                 return null;
             });
+
+            // 创建模型作者节点并与模型节点建立关系
+            String modelAuthor = getModelAuthor(author);
+            if (!modelAuthor.isEmpty() && !modelAuthor.equals("null")) {
+                System.out.println("modelAuthor:" + modelAuthor);
+                session.writeTransaction(tx -> {
+                    Result result = tx.run(
+                            "MATCH (m:Model {modelId: $modelId}) " +
+                                    "MERGE (author:ModelAuthor {name: $modelAuthor}) " +
+                                    "MERGE (m)-[:BY]->(author)",
+                            parameters("modelId", modelId, "modelAuthor", modelAuthor)
+                    );
+                    result.consume(); // 消耗查询结果
+                    return null;
+                });
+            }
 
             // 创建模型家族节点并与模型节点建立关系
             String modelFamily = getModelFamily(model_type);
@@ -118,6 +136,10 @@ public class Neo4jBolt extends BaseBasicBolt {
             }
         }
 
+    }
+    private String getModelAuthor(String author) {
+        // 由于model_type字段通常表示模型的任务或流水线标签，因此可以直接返回该字段的值
+        return author != null ? author : "";
     }
 
     private String getModelFamily(String model_type) {

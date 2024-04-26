@@ -26,7 +26,6 @@ public class LogConsoleBolt extends BaseRichBolt {
             String value = input.getStringByField("modelId");
             // System.out.println("received from kafka : "+ value);
             System.out.println("received modelId : "+ value);
-            // 必须ack,否则会重复消费kafka中的消息
             collector.ack(input);
         }catch (Exception e){
             e.printStackTrace();

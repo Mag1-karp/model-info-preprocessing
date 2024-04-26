@@ -23,6 +23,7 @@ public class HashBasedTopicSelector implements KafkaTopicSelector {
             ModelInfo modelInfo = objectMapper.readValue(message, ModelInfo.class);
             String modelId = modelInfo.getModelId();
             int index = Math.abs(modelId.hashCode()) % topics.length;
+            System.out.println("Model ID: " + modelId + " -> Topic: " + topics[index]);
             return topics[index];
         } catch (IOException e) {
             throw new RuntimeException("Error parsing JSON message", e);

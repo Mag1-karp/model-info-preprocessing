@@ -16,13 +16,10 @@ import org.apache.storm.thrift.TException;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
-/**
- * 从Kafka中读取数据
- */
 public class ReadingFromKafkaApp {
 
     private static final String BOOTSTRAP_SERVERS = "CurriculumPractice:9092";
-    private static final String TOPIC_NAME = "model-info-2";
+    private static final String TOPIC_NAME = "model-info";
 
     public static void main(String[] args) throws Exception {
 
@@ -31,10 +28,9 @@ public class ReadingFromKafkaApp {
         builder.setBolt("parsingBolt", new ParsingBolt()).shuffleGrouping("kafka_spout");
         builder.setBolt("deduplicationBolt", new DeduplicationBolt()).fieldsGrouping("parsingBolt", new Fields("modelId"));
         // builder.setBolt("logConsoleBolt", new LogConsoleBolt()).shuffleGrouping("deduplicationBolt");
-        // builder.setBolt("hiveBolt", new HiveBolt()).shuffleGrouping("deduplicationBolt");
-        builder.setBolt( "neo4jBolt", new Neo4jBolt()).shuffleGrouping(  "deduplicationBolt");
+        builder.setBolt("hiveBolt", new HiveBolt()).shuffleGrouping("deduplicationBolt");
+        // builder.setBolt( "neo4jBolt", new Neo4jBolt()).shuffleGrouping(  "deduplicationBolt");
 
-        // 如果外部传参cluster则代表线上环境启动,否则代表本地启动
         if (args.length > 0 && args[0].equals("cluster")) {
             try {
                 StormSubmitter.submitTopology("ClusterReadingFromKafkaApp", new Config(), builder.createTopology());
@@ -50,16 +46,12 @@ public class ReadingFromKafkaApp {
 
     private static KafkaSpoutConfig<String, String> getKafkaSpoutConfig(String bootstrapServers, String topic) {
         return KafkaSpoutConfig.builder(bootstrapServers, topic)
-                // 除了分组ID,以下配置都是可选的。分组ID必须指定,否则会抛出InvalidGroupIdException异常
                 .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
-                // 定义重试策略
                 .setRetry(getRetryService())
-                // 定时提交偏移量的时间间隔,默认是15s
                 .setOffsetCommitPeriodMs(10_000)
                 .build();
     }
 
-    // 定义重试策略
     private static KafkaSpoutRetryService getRetryService() {
         return new KafkaSpoutRetryExponentialBackoff(TimeInterval.microSeconds(500),
                 TimeInterval.milliSeconds(2), Integer.MAX_VALUE, TimeInterval.seconds(10));
